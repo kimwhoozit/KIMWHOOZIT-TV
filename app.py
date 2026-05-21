@@ -34,28 +34,52 @@ st.write("---")
 
 category = st.selectbox("어이 동생, 오늘은 어떤 주제로 썰을 풀어볼까?", ["정치/시사", "미스터리/공포/역사", "경제/비즈니스", "요리/음식 레시피", "일상/직장생활/인간관계", "투자/재테크/부동산"])
 
+# 🛠️ 하이브리드 엔진 매핑 테이블 (시사성 장르는 종합 메인 뉴스, 특수 장르는 분야별 실시간 핫이슈 추적)
 category_map = {
-    "정치/시사": {"hint": "양측의 정치적 역학 관계와 핵심 쟁점을 송곳처럼 짚어내는 시사 평론 평론가 스타일"},
-    "미스터리/공포/역사": {"hint": "발굴 데이터와 역사적 서사 배경을 토대로 숨겨진 진실을 파헤치는 흡입력 있는 다큐멘터리 스타일"},
-    "경제/비즈니스": {"hint": "거시 경제 지표의 변동이 실제 서민 가계와 골목 상권에 미치는 인과관계 분석 경제학자 스타일"},
-    "요리/음식 레시피": {"hint": "재료의 화학적 변화와 맛의 황금 비율을 유쾌하고 과학적으로 설명하는 셰프 지식인 스타일"},
-    "일상/직장생활/인간관계": {"hint": "직장 내 어른들의 심리학적 대처법 관점에서 속 시원한 솔루션을 제시하는 인생 멘토링 스타일"},
-    "투자/재테크/부동산": {"hint": "자산 시장의 주기, 공급 물량, 정책 변화를 기반 리스크를 헤지하는 전문 투자 리포트 스타일"}
+    "정치/시사": {
+        "mode": "top_stories", "query": "",
+        "hint": "양측의 정치적 역학 관계와 핵심 쟁점을 송곳처럼 짚어내는 시사 평론 평론가 스타일"
+    },
+    "미스터리/공포/역사": {
+        "mode": "niche_trend", "query": "유적 고고학 미스터리 역사 발견 비밀 과학",
+        "hint": "발굴 데이터와 역사적 서사 배경을 토대로 숨겨진 진실을 파헤치는 흡입력 있는 다큐멘터리 스타일"
+    },
+    "경제/비즈니스": {
+        "mode": "top_stories", "query": "",
+        "hint": "거시 경제 지표의 변동이 실제 서민 가계와 골목 상권에 미치는 인과관계 분석 경제학자 스타일"
+    },
+    "요리/음식 레시피": {
+        "mode": "niche_trend", "query": "요리 레시피 신제품 맛집 음식 트렌드 성분 과학",
+        "hint": "재료의 화학적 변화와 맛의 황금 비율, 혹은 최신 음식 트렌드를 유쾌하고 과학적으로 설명하는 셰프 지식인 스타일"
+    },
+    "일상/직장생활/인간관계": {
+        "mode": "niche_trend", "query": "직장인 심리학 회사 인간관계 트렌드 대처법",
+        "hint": "직장 내 어른들의 심리학적 대처법 관점에서 속 시원한 솔루션을 제시하는 인생 멘토링 스타일"
+    },
+    "투자/재테크/부동산": {
+        "mode": "top_stories", "query": "",
+        "hint": "자산 시장의 주기, 공급 물량, 정책 변화를 기반 리스크를 헤지하는 전문 투자 리포트 스타일"
+    }
 }
 
 if st.button(f"[{category}] 아저씨 이야기 보따리 풀기"):
     if not GEMINI_API_KEY:
         st.error("🚨 어이 동생! 왼쪽 화면 입력창에 구글 API 키를 채워넣어 줘 마!")
     else:
-        st.success("🔥 지금 이 순간 대한민국을 흔드는 구글 실시간 종합 헤드라인 톱 토픽을 긁어오는 중입니다 마!")
+        selected_info = category_map[category]
         
-        top_stories_url = "https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko"
+        # ⚙️ 카테고리 모드에 따른 뉴스 주소 하이브리드 세팅
+        if selected_info["mode"] == "top_stories":
+            st.success("🔥 지금 이 순간 대한민국을 흔드는 구글 실시간 종합 헤드라인 톱 토픽을 긁어오는 중입니다 마!")
+            news_url = "https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko"
+        else:
+            st.success(f"🎯 [{category}] 분야에서 실시간으로 가장 핫하게 떠오르는 트렌드 토픽들을 정밀 추적합니다 마!")
+            news_url = f"https://news.google.com/rss/search?q={urllib.parse.quote(selected_info['query'])}&hl=ko&gl=KR&ceid=KR:ko"
         
         try:
-            res = requests.get(top_stories_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+            res = requests.get(news_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
             feed = feedparser.parse(res.content)
             
-            # 🛑 [오타 완벽 복구 장소!] 대괄호 빵빵하게 다시 채워넣었다 마!
             raw_headlines = []
             if feed.entries:
                 for entry in feed.entries[:30]:
@@ -63,7 +87,7 @@ if st.button(f"[{category}] 아저씨 이야기 보따리 풀기"):
                     raw_headlines.append(clean_title)
             
             if not raw_headlines:
-                st.error("🚨 구글 실시간 헤드라인을 긁어오지 못했다 마! 잠시 후 다시 시도해봐 마.")
+                st.error("🚨 구글 실시간 데이터를 긁어오지 못했다 마! 잠시 후 다시 시도해봐 마.")
             else:
                 headline_pool = "\n".join([f"- {title}" for title in raw_headlines])
                 
@@ -72,18 +96,15 @@ if st.button(f"[{category}] 아저씨 이야기 보따리 풀기"):
                 
                 prompt_instruction = f"""
                 너는 50대 정 많은 동네 형님이자 세상 모든 분야에 빠삭한 숨은 대성 지식인 '김씨 아저씨'야.
-                아래 제공된 [구글 실시간 종합 헤드라인 뉴스 리스트]는 지금 대한민국에서 가장 핫한 실시간 토픽들이야.
-                
-                이 리스트 중에서 오늘 내가 선택한 카테고리인 [{category}]와 가장 유사성이 높거나, 혹은 이 카테고리의 관점({category_map[category]['hint']})에서 날카롭게 썰을 풀기 좋은 '최적의 이슈 3가지'를 니가 직접 엄선해라. 
-                (만약 직접적으로 엮이는 기사가 적다면, 가장 거대한 트렌드 뉴스를 이 카테고리의 시선으로 유기적으로 재해석해서 골라라.)
+                아래 제공된 [구글 실시간 트렌드 뉴스 리스트]에서 오늘 내가 선택한 카테고리인 [{category}]의 관점({selected_info['hint']})에 200% 부합하는 '최적의 이슈 3가지'를 니가 직접 엄선해라.
                 
                 [대본 작성 절대 준수 지침]
                 1. 엄선한 3가지 이슈를 바탕으로 각각 story1, story2, story3 대본을 작성해라.
-                2. 각 썰은 무조건 '공백 제외 500자 이상'의 묵직한 분량이어야 하며, [도입부-이면 구조 해부-서민 실전 솔루션] 단계를 확실히 밟아라.
+                2. 각 썰은 무조건 '공백 제외 500자 이상'의 묵직한 분량이어야 하며, [도입부-이면 구조 해부-서민 실전 솔루션/꿀팁] 단계를 확실히 밟아라.
                 3. 말투는 (~했거든 마, ~알아야 한다 동생아) 같은 찰진 경상도 아저씨 톤을 유지하되 알맹이는 칼날 같아야 한다.
                 4. 최종 결과물의 제목 파트에 니가 리스트에서 엄선한 '진짜 기사 제목'을 매칭해서 출력해라.
                 
-                [구글 실시간 종합 헤드라인 뉴스 리스트]
+                [구글 실시간 트렌드 뉴스 리스트]
                 {headline_pool}
                 """
                 
@@ -110,7 +131,7 @@ if st.button(f"[{category}] 아저씨 이야기 보따리 풀기"):
                     
                     chosen_titles = stories_data.get("selected_titles", ["실시간 핫이슈 #1", "실시간 핫이슈 #2", "실시간 핫이슈 #3"])
                     
-                    st.info(f"🚀 [{success_model} 엔진]이 실시간 탑 토픽 중 [{category}] 유사성 매칭 3선을 엄선하여 대본을 완성했다 마!")
+                    st.info(f"🚀 [{success_model} 엔진]이 [{category}] 맞춤형 실시간 핫 토픽 3선을 엄선하여 대본을 완성했다 마!")
                     
                     for i in range(3):
                         story_content = stories_data.get(f"story{i+1}", "보따리 풀다가 쏟았다 마.")
