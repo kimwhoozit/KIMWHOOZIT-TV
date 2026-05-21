@@ -49,12 +49,81 @@ if st.button(f"[{category}] 아저씨 이야기 보따리 풀기"):
     else:
         st.success("🔥 지금 이 순간 대한민국을 흔드는 구글 실시간 종합 헤드라인 톱 토픽을 긁어오는 중입니다 마!")
         
-        # 🛠️ [동생의 천재적 아이디어] 검색어 고정 방식 폐기! 실시간 메인 뉴스 헤드라인 속보 30개를 직격 수집!
         top_stories_url = "https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko"
         
         try:
             res = requests.get(top_stories_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
             feed = feedparser.parse(res.content)
             
-            # 실시간 헤드라인 최대 30개 수집
-            raw_headlines =
+            # 🛑 [오타 완벽 복구 장소!] 대괄호 빵빵하게 다시 채워넣었다 마!
+            raw_headlines = []
+            if feed.entries:
+                for entry in feed.entries[:30]:
+                    clean_title = re.sub(r'\s*[-|]?\s*[가-힣a-zA-Z0-9\s]+$', '', entry.title).strip()
+                    raw_headlines.append(clean_title)
+            
+            if not raw_headlines:
+                st.error("🚨 구글 실시간 헤드라인을 긁어오지 못했다 마! 잠시 후 다시 시도해봐 마.")
+            else:
+                headline_pool = "\n".join([f"- {title}" for title in raw_headlines])
+                
+                st.write("---")
+                st.subheader(f"👨 동네 김씨 아저씨의 지식형 [{category}] 분석 썰")
+                
+                prompt_instruction = f"""
+                너는 50대 정 많은 동네 형님이자 세상 모든 분야에 빠삭한 숨은 대성 지식인 '김씨 아저씨'야.
+                아래 제공된 [구글 실시간 종합 헤드라인 뉴스 리스트]는 지금 대한민국에서 가장 핫한 실시간 토픽들이야.
+                
+                이 리스트 중에서 오늘 내가 선택한 카테고리인 [{category}]와 가장 유사성이 높거나, 혹은 이 카테고리의 관점({category_map[category]['hint']})에서 날카롭게 썰을 풀기 좋은 '최적의 이슈 3가지'를 니가 직접 엄선해라. 
+                (만약 직접적으로 엮이는 기사가 적다면, 가장 거대한 트렌드 뉴스를 이 카테고리의 시선으로 유기적으로 재해석해서 골라라.)
+                
+                [대본 작성 절대 준수 지침]
+                1. 엄선한 3가지 이슈를 바탕으로 각각 story1, story2, story3 대본을 작성해라.
+                2. 각 썰은 무조건 '공백 제외 500자 이상'의 묵직한 분량이어야 하며, [도입부-이면 구조 해부-서민 실전 솔루션] 단계를 확실히 밟아라.
+                3. 말투는 (~했거든 마, ~알아야 한다 동생아) 같은 찰진 경상도 아저씨 톤을 유지하되 알맹이는 칼날 같아야 한다.
+                4. 최종 결과물의 제목 파트에 니가 리스트에서 엄선한 '진짜 기사 제목'을 매칭해서 출력해라.
+                
+                [구글 실시간 종합 헤드라인 뉴스 리스트]
+                {headline_pool}
+                """
+                
+                final_prompt = prompt_instruction + '\n\n응답은 반드시 마크다운 백틱 없이 순수한 JSON 규격으로만 출력해라. 형태는 다음과 같아야 한다:\n{"selected_titles": ["선택한 기사제목1", "선택한 기사제목2", "선택한 기사제목3"], "story1": "내용", "story2": "내용", "story3": "내용"}'
+                
+                modern_models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+                response = None
+                success_model = ""
+                
+                for model_name in modern_models:
+                    try:
+                        model = genai.GenerativeModel(model_name=model_name, generation_config={"response_mime_type": "application/json"})
+                        response = model.generate_content(final_prompt)
+                        if response and response.text:
+                            success_model = model_name
+                            break
+                    except:
+                        continue
+                
+                if success_model:
+                    raw_text = response.text
+                    raw_text = re.sub(r'```json\s*|```', '', raw_text).strip()
+                    stories_data = json.loads(raw_text)
+                    
+                    chosen_titles = stories_data.get("selected_titles", ["실시간 핫이슈 #1", "실시간 핫이슈 #2", "실시간 핫이슈 #3"])
+                    
+                    st.info(f"🚀 [{success_model} 엔진]이 실시간 탑 토픽 중 [{category}] 유사성 매칭 3선을 엄선하여 대본을 완성했다 마!")
+                    
+                    for i in range(3):
+                        story_content = stories_data.get(f"story{i+1}", "보따리 풀다가 쏟았다 마.")
+                        title_text = chosen_titles[i] if i < len(chosen_titles) else "실시간 트렌드 분석 소식"
+                        
+                        full_script = f"[{category}]{prefix_text}{story_content}{suffix_text}"
+                        
+                        st.markdown(f"### 👨 김씨 아저씨의 실시간 융합 분석 #{i+1} : {title_text}")
+                        st.code(full_script, language="text")
+                        st.write("") 
+                        
+                    st.balloons()
+                else:
+                    st.warning("⚠️ 구글 서버 거부 반응 발생!")
+        except Exception as e:
+            st.error(f"오류 발생: {e}")
