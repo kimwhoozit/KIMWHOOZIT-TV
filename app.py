@@ -104,16 +104,12 @@ if st.button(f"[{category}] 아저씨 이야기 보따리 풀기"):
                 
                 for i in range(len(articles)):
                     story_content = stories_data.get(f"story{i+1}", "보따리 풀다가 쏟았다 마.")
-                    
-                    # 🛠️ [앞뒤 고정 문구 + 카테고리까지 완벽하게 하나로 납작 묶어버린 최종본]
                     full_script = f"[{category}]{prefix_text}{story_content}{suffix_text}"
                     
                     st.markdown(f"### 👨 김씨 아저씨의 심층 분석 #{i+1} : {articles[i]['title']}")
-                    
-                    # 💡 [치트키] 모바일/PC 어디서나 100% 작동하고 눈에 바로 보이는 스트림릿 정식 무적 복사 상자!
-                    # 상자 우측 상단에 상시 대기 중인 '클립보드 아이콘(복사 버튼)'을 누르면 앞뒤 문구 포함 통째로 싹 복사된다 마!
+                    # 💡 모바일/PC 100% 공용 붙박이 우측 상단 복사 단추 탑재!
                     st.code(full_script, language="text")
-                    st.write("") # 간격 조절
+                    st.write("") 
                     
                 st.balloons()
             else:
