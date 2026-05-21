@@ -28,18 +28,17 @@ st.title("🔥 김씨 아저씨의 지식형 트렌드 분석 서비스")
 st.write("구수한 입담 뒤에 날카로운 통찰을 숨긴 '지식인 김씨 아저씨'가 실시간 탑 토픽을 카테고리별로 매칭하여 분석합니다.")
 st.write("---")
 
-prefix_text = st.text_input("💬 복사할 때 [카테고리] 바로 뒤에 붙을 고정 문구", value=" 📢 안녕하세요! 김씨아저씨 TV입니다. 오늘 따끈따끈한 실시간 세상사 썰 배달왔습니다!\n\n==============================\n")
-suffix_text = st.text_area("💬 복사할 때 [이야기 맨 뒤]에 자동으로 붙을 고정 문구", value="\n==============================\n\n👍오늘의 썰이 재밌으셨다면 [구독]과 [좋아요] 알림설정까지 꼭 부탁드려요 동생들! 다음 썰에서 만납시다!")
+# 🔥 [동생 요청 반영: 자동입력란 고정 문구 초기값 수정 완료 마!]
+prefix_text = st.text_input("💬 복사할 때 [카테고리] 바로 뒤에 붙을 고정 문구", value="")
+suffix_text = st.text_area("💬 복사할 때 [이야기 맨 뒤]에 자동으로 붙을 고정 문구", value="\n==============================\n\n이미지 전용 한국어 숏츠 하나 만들어줘~!!")
 st.write("---")
 
-# 🌍 [국제/해외이슈] 선택지 긴급 추가 완료 마!
 category = st.selectbox("어이 동생, 오늘은 어떤 주제로 썰을 풀어볼까?", ["정치/시사", "국제/해외이슈", "미스터리/공포/역사", "경제/비즈니스", "요리/음식 레시피", "일상/직장생활/인간관계", "투자/재테크/부동산"])
 
-# 🛠️ 하이브리드 엔진 매핑 테이블 (국제 이슈 전용 그물망 설계 마!)
 category_map = {
     "정치/시사": {
         "mode": "top_stories", "query": "",
-        "hint": "양측의 정치적 역학 관계와 핵심 쟁점을 송곳처럼 짚어내는 시사 평론 평론가 스타일"
+        "hint": "양측의 정치적 역학 관계 and 핵심 쟁점을 송곳처럼 짚어내는 시사 평론 평론가 스타일"
     },
     "국제/해외이슈": {
         "mode": "niche_trend", "query": "국제 세계 미국 트럼프 전쟁 갈등 외교 바이러스 에볼라 사태",
@@ -78,7 +77,7 @@ if st.button(f"[{category}] 아저씨 이야기 보따리 풀기"):
             news_url = "https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko"
         else:
             st.success(f"🎯 [{category}] 분야에서 실시간으로 가장 핫하게 떠오르는 트렌드 토픽들을 정밀 추적합니다 마!")
-            news_url = f"https://news.google.com/rss/search?q={urllib.parse.quote(selected_info['query'])}&hl=ko&gl=KR&ceid=KR:ko"
+            news_url = f"https://news.google.com/rss?q={urllib.parse.quote(selected_info['query'])}&hl=ko&gl=KR&ceid=KR:ko"
         
         try:
             res = requests.get(news_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
@@ -135,7 +134,7 @@ if st.button(f"[{category}] 아저씨 이야기 보따리 풀기"):
                     
                     chosen_titles = stories_data.get("selected_titles", ["실시간 핫이슈 #1", "실시간 핫이슈 #2", "실시간 핫이슈 #3"])
                     
-                    st.info(f"🚀 [{success_model} 엔진]이 [{category}] 맞춤형 실시간 핫 토픽 3선을 엄선하여 대본을 완성했다 마!")
+                    st.info(f"🚀 [{success_model} ENGINE] 가동 완료! 맞춤형 실시간 핫 토픽 대본을 출력한다 마!")
                     
                     for i in range(3):
                         story_content = stories_data.get(f"story{i+1}", "보따리 풀다가 쏟았다 마.")
